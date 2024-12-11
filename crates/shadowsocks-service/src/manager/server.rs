@@ -388,6 +388,7 @@ impl Manager {
             outbound_fwmark: None,
             outbound_bind_addr: None,
             outbound_bind_interface: None,
+            outbound_udp_allow_fragmentation: None,
         };
 
         let mut config = Config::new(ConfigType::Server);
@@ -479,7 +480,13 @@ impl Manager {
             None => return Ok(AddResponse("method is required")),
         };
 
-        let mut svr_cfg = ServerConfig::new(addr, req.password.clone(), method);
+        let mut svr_cfg = match ServerConfig::new(addr, req.password.clone(), method) {
+            Ok(svr_cfg) => svr_cfg,
+            Err(err) => {
+                error!("failed to create ServerConfig, error: {}", err);
+                return Ok(AddResponse("invalid server".to_string()));
+            }
+        };
 
         if let Some(ref plugin) = req.plugin {
             let p = PluginConfig {
